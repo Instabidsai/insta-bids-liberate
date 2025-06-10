@@ -1,5 +1,5 @@
-import { CopilotKit } from "@copilotkit/react-core";
-import { CopilotChat, useCopilotAction } from "@copilotkit/react-ui";
+import { CopilotKit, useCopilotAction } from "@copilotkit/react-core";
+import { CopilotChat } from "@copilotkit/react-ui";
 import "@copilotkit/react-ui/styles.css";
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -71,7 +71,7 @@ function ProgressIndicator({ steps }: { steps: any[] }) {
       animate={{ opacity: 1, x: 0 }}
       className="bg-white rounded-xl p-6 shadow-lg"
     >
-      <h3 className="text-2xl font-bold mb-6">Implementation Progress</h3>
+      <h3 className="text-2xl font-bold mb-6">Implementation Process</h3>
       <div className="space-y-4">
         {steps.map((step, index) => (
           <div key={index} className="flex items-center">
