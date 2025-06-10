@@ -1,52 +1,9 @@
 import React, { useState } from 'react';
 import { CopilotKit, useCopilotAction, useCopilotReadable } from "@copilotkit/react-core";
 import { CopilotChat } from "@copilotkit/react-ui";
-// Removed the CSS import as it's causing build errors
 
 // Use your existing agent backend
 const AGENT_API_URL = import.meta.env.VITE_SALES_BOT_API_URL || 'https://instabids-sales-bot-api-67gkc.ondigitalocean.app';
-
-// Custom adapter that connects to your existing backend
-const customAdapter = {
-  process: async (messages: any[], actions: any[]) => {
-    try {
-      const lastMessage = messages[messages.length - 1];
-      
-      const response = await fetch(`${AGENT_API_URL}/chat`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          message: lastMessage.content,
-          thread_id: 'agents-made-easy-' + Date.now(),
-          context: {
-            mode: 'agents-made-easy',
-            actions: actions,
-            fullConversation: messages
-          }
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error(`Agent API responded with ${response.status}`);
-      }
-
-      const data = await response.json();
-      
-      return {
-        content: data.response,
-        actions: data.actions || []
-      };
-    } catch (error) {
-      console.error('Error connecting to agent:', error);
-      return {
-        content: "I'm having trouble connecting to the AI service. Please try again.",
-        actions: []
-      };
-    }
-  }
-};
 
 const AgentsMadeEasy: React.FC = () => {
   const [showChat, setShowChat] = useState(false);
@@ -55,7 +12,7 @@ const AgentsMadeEasy: React.FC = () => {
   const [proposedSystem, setProposedSystem] = useState<any>(null);
 
   return (
-    <CopilotKit adapter={customAdapter}>
+    <CopilotKit runtimeUrl="/api/copilot-runtime">
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
         {/* Hero Section */}
         <div className="container mx-auto px-4 py-8">
