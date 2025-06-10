@@ -10,7 +10,7 @@ export default defineConfig(({ mode }) => ({
     port: 8080,
     proxy: {
       // Proxy CopilotKit API requests to the sales bot
-      '/api/copilot/agents-made-easy': {
+      '/api/agents-made-easy': {
         target: 'https://instabids-sales-bot-api-67gkc.ondigitalocean.app',
         changeOrigin: true,
         rewrite: (path) => '/chat',

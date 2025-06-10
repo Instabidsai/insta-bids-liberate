@@ -330,8 +330,8 @@ function AgentsMadeEasyContent() {
 }
 
 export default function AgentsMadeEasy() {
-  // Use the proxy endpoint configured in vite.config.ts
-  const apiUrl = '/api/copilot/agents-made-easy';
+  // Use the API endpoint at root level for Vercel
+  const apiUrl = '/api/agents-made-easy';
   
   return (
     <CopilotKit runtimeUrl={apiUrl}>
