@@ -1,143 +1,146 @@
-import { CopilotBackend, OpenAIAdapter } from "@copilotkit/backend";
-import { NextRequest } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 
-// Create a new CopilotBackend instance
-const copilotKit = new CopilotBackend({
-  actions: [
-    {
-      name: "showPricingTable",
-      description: "Display an interactive pricing table with different plans",
-      parameters: [
-        {
-          name: "plans",
-          type: "object[]",
-          description: "Array of pricing plans with name, price, and features array",
-          required: true
-        }
-      ],
-      handler: async ({ plans }) => {
-        return "Pricing table displayed successfully";
-      }
-    },
-    {
-      name: "showBookingCalendar",
-      description: "Show a calendar for booking demos or consultations",
-      parameters: [
-        {
-          name: "slots",
-          type: "object[]",
-          description: "Available time slots with date and time properties",
-          required: true
-        }
-      ],
-      handler: async ({ slots }) => {
-        return "Calendar displayed with available slots";
-      }
-    },
-    {
-      name: "showProgressIndicator",
-      description: "Display implementation progress steps",
-      parameters: [
-        {
-          name: "steps",
-          type: "object[]",
-          description: "Implementation steps with name, description, and completed boolean",
-          required: true
-        }
-      ],
-      handler: async ({ steps }) => {
-        return "Progress indicator displayed";
-      }
-    },
-    {
-      name: "showROICalculator",
-      description: "Display an ROI calculator",
-      parameters: [
-        {
-          name: "metrics",
-          type: "object",
-          description: "Business metrics with hoursPerWeek, hourlyRate, and cost",
-          required: true
-        }
-      ],
-      handler: async ({ metrics }) => {
-        return "ROI calculator displayed";
-      }
-    }
-  ]
-});
-
-// Custom adapter that forwards messages to your sales bot
-const salesBotAdapter = new OpenAIAdapter({
-  openai: {
-    // This is a mock - we'll override the completion method
-    apiKey: "not-needed"
-  }
-});
-
-// Override the completion method to call your sales bot
-salesBotAdapter.complete = async (messages: any[]) => {
-  const lastMessage = messages[messages.length - 1];
-  
-  if (lastMessage && lastMessage.role === 'user') {
-    try {
-      const response = await fetch('https://instabids-sales-bot-api-67gkc.ondigitalocean.app/chat', {
+export async function POST(req: NextRequest) {
+  try {
+    const body = await req.json();
+    const messages = body.messages || [];
+    const lastMessage = messages[messages.length - 1];
+    
+    // If this is a user message, forward to sales bot
+    if (lastMessage && lastMessage.role === 'user') {
+      const salesBotResponse = await fetch('https://instabids-sales-bot-api-67gkc.ondigitalocean.app/chat', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           message: lastMessage.content,
-          thread_id: 'default'
+          thread_id: body.threadId || 'default'
         })
       });
 
-      if (!response.ok) {
-        throw new Error(`Sales bot returned ${response.status}`);
+      if (!salesBotResponse.ok) {
+        throw new Error(`Sales bot error: ${salesBotResponse.status}`);
       }
 
-      const data = await response.json();
+      const salesBotData = await salesBotResponse.json();
       
-      return {
+      // Check if response contains action triggers
+      const response = salesBotData.response || salesBotData.message || "";
+      let actions = [];
+      
+      // Simple pattern matching for UI generation
+      if (response.toLowerCase().includes('pricing') || response.toLowerCase().includes('plans')) {
+        actions.push({
+          name: "showPricingTable",
+          args: {
+            plans: [
+              {
+                name: "Starter",
+                price: 97,
+                featured: false,
+                features: ["1 AI Agent", "1,000 conversations/mo", "Email support", "Basic analytics"]
+              },
+              {
+                name: "Professional",
+                price: 297,
+                featured: true,
+                features: ["3 AI Agents", "10,000 conversations/mo", "Priority support", "Advanced analytics", "Custom training"]
+              },
+              {
+                name: "Enterprise",
+                price: 997,
+                featured: false,
+                features: ["Unlimited AI Agents", "Unlimited conversations", "24/7 phone support", "White-label options", "API access"]
+              }
+            ]
+          }
+        });
+      }
+      
+      if (response.toLowerCase().includes('demo') || response.toLowerCase().includes('book')) {
+        actions.push({
+          name: "showBookingCalendar",
+          args: {
+            slots: [
+              { date: "Tomorrow", time: "10:00 AM" },
+              { date: "Tomorrow", time: "2:00 PM" },
+              { date: "Thursday", time: "11:00 AM" },
+              { date: "Thursday", time: "3:00 PM" },
+              { date: "Friday", time: "9:00 AM" },
+              { date: "Friday", time: "1:00 PM" }
+            ]
+          }
+        });
+      }
+      
+      if (response.toLowerCase().includes('implementation') || response.toLowerCase().includes('timeline')) {
+        actions.push({
+          name: "showProgressIndicator",
+          args: {
+            steps: [
+              { name: "Discovery Call", description: "Understand your business needs", completed: true },
+              { name: "AI Agent Design", description: "Custom agent configuration", completed: false },
+              { name: "Training & Setup", description: "Train on your data", completed: false },
+              { name: "Go Live", description: "Deploy to production", completed: false }
+            ]
+          }
+        });
+      }
+      
+      if (response.toLowerCase().includes('roi') || response.toLowerCase().includes('calculator')) {
+        actions.push({
+          name: "showROICalculator",
+          args: {
+            metrics: {
+              hoursPerWeek: 20,
+              hourlyRate: 50,
+              cost: 297
+            }
+          }
+        });
+      }
+      
+      // Return CopilotKit-compatible response
+      return NextResponse.json({
         choices: [{
           message: {
             role: 'assistant',
-            content: data.response || data.message || "I can help you implement AI agents for your business. Ask me about pricing, demos, or ROI!"
+            content: response
           },
           finish_reason: 'stop'
-        }]
-      };
-    } catch (error) {
-      console.error('Sales bot error:', error);
-      return {
-        choices: [{
-          message: {
-            role: 'assistant',
-            content: "I'm having trouble connecting to our sales system. Please try again or contact support@instabids.ai"
-          },
-          finish_reason: 'stop'
-        }]
-      };
+        }],
+        actions: actions
+      });
     }
+    
+    // Initial message
+    return NextResponse.json({
+      choices: [{
+        message: {
+          role: 'assistant',
+          content: "Hi! I'm your AI sales assistant. I can show you pricing, book demos, and calculate ROI. What would you like to see?"
+        },
+        finish_reason: 'stop'
+      }]
+    });
+    
+  } catch (error) {
+    console.error('Error in copilot route:', error);
+    
+    return NextResponse.json({
+      choices: [{
+        message: {
+          role: 'assistant',
+          content: "I'm having trouble connecting to our sales system. Please try again or contact support@instabids.ai"
+        },
+        finish_reason: 'stop'
+      }]
+    });
   }
-  
-  return {
-    choices: [{
-      message: {
-        role: 'assistant',
-        content: "Hi! I'm your AI sales assistant. I can show you pricing, book demos, and calculate ROI. What would you like to see?"
-      },
-      finish_reason: 'stop'
-    }]
-  };
-};
+}
 
-export async function POST(req: NextRequest) {
-  const { handleRequest } = copilotKit;
-  
-  return handleRequest({
-    req,
-    adapter: salesBotAdapter,
-    endpoint: "/api/copilot/agents-made-easy"
-  });
+// Also handle GET for health checks
+export async function GET() {
+  return NextResponse.json({ status: 'ok' });
 }
