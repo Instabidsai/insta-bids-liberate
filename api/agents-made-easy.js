@@ -1,4 +1,5 @@
-// Standard Node.js function for Vercel
+const https = require('https');
+
 module.exports = async (req, res) => {
   // Enable CORS
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -25,22 +26,50 @@ module.exports = async (req, res) => {
     
     console.log('Received message:', userMessage);
     
-    // Forward to sales bot
-    const salesBotResponse = await fetch('https://instabids-sales-bot-api-67gkc.ondigitalocean.app/chat', {
+    // Prepare the request data
+    const requestData = JSON.stringify({
+      message: userMessage,
+      thread_id: 'agents-made-easy-' + Date.now(),
+      context: {
+        mode: 'agents-made-easy'
+      }
+    });
+
+    // Make request to sales bot
+    const options = {
+      hostname: 'instabids-sales-bot-api-67gkc.ondigitalocean.app',
+      path: '/chat',
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        message: userMessage,
-        thread_id: 'agents-made-easy-' + Date.now(),
-        context: {
-          mode: 'agents-made-easy'
-        }
-      })
+        'Content-Length': requestData.length
+      }
+    };
+
+    const salesBotRequest = new Promise((resolve, reject) => {
+      const salesReq = https.request(options, (salesRes) => {
+        let data = '';
+        salesRes.on('data', (chunk) => {
+          data += chunk;
+        });
+        salesRes.on('end', () => {
+          try {
+            resolve(JSON.parse(data));
+          } catch (e) {
+            resolve({ response: data });
+          }
+        });
+      });
+
+      salesReq.on('error', (error) => {
+        reject(error);
+      });
+
+      salesReq.write(requestData);
+      salesReq.end();
     });
 
-    const data = await salesBotResponse.json();
+    const data = await salesBotRequest;
     let responseText = data.response || data.message || "I'm having trouble connecting to our sales system.";
     
     // Enhance responses
