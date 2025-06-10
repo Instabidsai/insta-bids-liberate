@@ -4,8 +4,13 @@
   "framework": "vite",
   "rewrites": [
     {
-      "source": "/(.*)",
+      "source": "/((?!api).*)",
       "destination": "/index.html"
     }
-  ]
+  ],
+  "functions": {
+    "api/copilot/agents-made-easy.ts": {
+      "runtime": "edge"
+    }
+  }
 }

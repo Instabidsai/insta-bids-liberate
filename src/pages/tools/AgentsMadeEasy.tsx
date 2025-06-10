@@ -1,7 +1,7 @@
-import { CopilotKit, useCopilotAction } from "@copilotkit/react-core";
+import { CopilotKit, useCopilotAction, useCopilotChat } from "@copilotkit/react-core";
 import { CopilotChat } from "@copilotkit/react-ui";
 import "@copilotkit/react-ui/styles.css";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Check, Calendar, Calculator, TrendingUp } from "lucide-react";
 
@@ -129,8 +129,11 @@ function ROICalculator({ metrics }: { metrics: any }) {
 function AgentsMadeEasyContent() {
   const [dynamicComponents, setDynamicComponents] = useState<any[]>([]);
   
+  // Get the chat messages to analyze for UI triggers
+  const { messages } = useCopilotChat();
+  
   // Register action handlers for dynamic UI generation
-  useCopilotAction({
+  const showPricingTable = useCopilotAction({
     name: "showPricingTable",
     description: "Display an interactive pricing table",
     parameters: [
@@ -146,7 +149,7 @@ function AgentsMadeEasyContent() {
     }
   });
 
-  useCopilotAction({
+  const showBookingCalendar = useCopilotAction({
     name: "showBookingCalendar",
     description: "Show a calendar for booking demos",
     parameters: [
@@ -162,7 +165,7 @@ function AgentsMadeEasyContent() {
     }
   });
 
-  useCopilotAction({
+  const showProgressIndicator = useCopilotAction({
     name: "showProgressIndicator",
     description: "Display implementation progress",
     parameters: [
@@ -178,7 +181,7 @@ function AgentsMadeEasyContent() {
     }
   });
 
-  useCopilotAction({
+  const showROICalculator = useCopilotAction({
     name: "showROICalculator",
     description: "Display an ROI calculator",
     parameters: [
@@ -193,6 +196,79 @@ function AgentsMadeEasyContent() {
       return "Based on your inputs, here's your projected ROI. Most clients see positive returns within 30 days!";
     }
   });
+
+  // Analyze messages for UI triggers
+  useEffect(() => {
+    if (messages.length > 0) {
+      const lastMessage = messages[messages.length - 1];
+      if (lastMessage.role === 'assistant') {
+        const content = lastMessage.content.toLowerCase();
+        
+        // Check for pricing triggers
+        if (content.includes('pricing plans') || content.includes('let me show you our pricing')) {
+          showPricingTable.handler({
+            plans: [
+              {
+                name: "Starter",
+                price: 97,
+                featured: false,
+                features: ["1 AI Agent", "1,000 conversations/mo", "Email support", "Basic analytics"]
+              },
+              {
+                name: "Professional",
+                price: 297,
+                featured: true,
+                features: ["3 AI Agents", "10,000 conversations/mo", "Priority support", "Advanced analytics", "Custom training"]
+              },
+              {
+                name: "Enterprise",
+                price: 997,
+                featured: false,
+                features: ["Unlimited AI Agents", "Unlimited conversations", "24/7 phone support", "White-label options", "API access"]
+              }
+            ]
+          });
+        }
+        
+        // Check for demo booking triggers
+        if (content.includes('book a demo') || content.includes('available slots')) {
+          showBookingCalendar.handler({
+            slots: [
+              { date: "Tomorrow", time: "10:00 AM" },
+              { date: "Tomorrow", time: "2:00 PM" },
+              { date: "Thursday", time: "11:00 AM" },
+              { date: "Thursday", time: "3:00 PM" },
+              { date: "Friday", time: "9:00 AM" },
+              { date: "Friday", time: "1:00 PM" }
+            ]
+          });
+        }
+        
+        // Check for implementation timeline triggers
+        if (content.includes('implementation timeline') || content.includes('typical implementation')) {
+          showProgressIndicator.handler({
+            steps: [
+              { name: "Discovery Call", description: "Understand your business needs", completed: true },
+              { name: "AI Agent Design", description: "Custom agent configuration", completed: false },
+              { name: "Training & Setup", description: "Train on your data", completed: false },
+              { name: "Go Live", description: "Deploy to production", completed: false }
+            ]
+          });
+        }
+        
+        // Check for ROI calculator triggers
+        if (content.includes('calculate your') || content.includes('potential roi')) {
+          showROICalculator.handler({
+            metrics: {
+              hoursPerWeek: 20,
+              hourlyRate: 50,
+              cost: 297
+            }
+          });
+        }
+      }
+    }
+  }, [messages]);
 
   return (
     <div className="flex h-screen">
@@ -235,21 +311,13 @@ function AgentsMadeEasyContent() {
       {/* Chat Panel */}
       <div className="w-96 border-l">
         <CopilotChat
-          instructions={`You are the Instabids AI Agent Assistant connected to our live sales system.
+          instructions={`You are the Instabids AI Agent Assistant. When users ask about:
+          - Pricing: Say "Let me show you our pricing plans..."
+          - Demo: Say "I can help you book a demo. Here are our available slots..."
+          - Implementation: Say "Here's our typical implementation timeline..."
+          - ROI: Say "Let's calculate your potential ROI..."
           
-          IMPORTANT: Use the action functions to create dynamic UI components:
-          - When discussing pricing, use showPricingTable
-          - When scheduling demos, use showBookingCalendar  
-          - When explaining implementation, use showProgressIndicator
-          - When calculating ROI, use showROICalculator
-          
-          Example responses that trigger UI:
-          - "Let me show you our pricing plans" -> showPricingTable
-          - "I can help you book a demo" -> showBookingCalendar
-          - "Here's how implementation works" -> showProgressIndicator
-          - "Let's calculate your ROI" -> showROICalculator
-          
-          Always create visual components instead of just describing things in text.`}
+          Always use these exact phrases to trigger the UI components.`}
           labels={{
             title: "AI Sales Assistant",
             initial: "Hi! I'm your AI sales assistant. I can show you pricing, book demos, and calculate ROI. What would you like to see?"
