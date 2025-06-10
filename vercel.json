@@ -11,13 +11,5 @@
       "source": "/((?!api).*)",
       "destination": "/index.html"
     }
-  ],
-  "functions": {
-    "api/agents-made-easy.js": {
-      "runtime": "edge"
-    },
-    "api/test.js": {
-      "runtime": "edge"
-    }
-  }
+  ]
 }
