@@ -1,277 +1,275 @@
-import React, { useState } from 'react';
+'use client';
 
-// Use your existing agent backend
-const AGENT_API_URL = import.meta.env.VITE_SALES_BOT_API_URL || 'https://instabids-sales-bot-api-67gkc.ondigitalocean.app';
+import { CopilotKit } from "@copilotkit/react-core";
+import { CopilotChat, useCopilotAction } from "@copilotkit/react-ui";
+import "@copilotkit/react-ui/styles.css";
+import { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Check, Calendar, Calculator, TrendingUp } from "lucide-react";
 
-interface Message {
-  role: 'user' | 'assistant';
-  content: string;
+// Pricing Table Component
+function PricingTable({ plans }: { plans: any[] }) {
+  return (
+    <motion.div 
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="grid md:grid-cols-3 gap-6 p-6"
+    >
+      {plans.map((plan, index) => (
+        <div 
+          key={index}
+          className={`bg-white rounded-xl p-6 shadow-lg ${plan.featured ? 'ring-2 ring-purple-600' : ''}`}
+        >
+          <h3 className="text-2xl font-bold mb-2">{plan.name}</h3>
+          <p className="text-4xl font-bold mb-4">${plan.price}<span className="text-sm">/mo</span></p>
+          <ul className="space-y-2 mb-6">
+            {plan.features.map((feature: string, i: number) => (
+              <li key={i} className="flex items-center">
+                <Check className="w-5 h-5 text-green-500 mr-2" />
+                {feature}
+              </li>
+            ))}
+          </ul>
+          <button className="w-full bg-purple-600 text-white py-2 rounded-lg hover:bg-purple-700">
+            Get Started
+          </button>
+        </div>
+      ))}
+    </motion.div>
+  );
 }
 
-const AgentsMadeEasy: React.FC = () => {
-  const [showChat, setShowChat] = useState(false);
-  const [businessInfo, setBusinessInfo] = useState<any>({});
-  const [painPoints, setPainPoints] = useState<any[]>([]);
-  const [proposedSystem, setProposedSystem] = useState<any>(null);
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      role: 'assistant',
-      content: "Hi! I'm your AI transformation consultant. Let's design a custom AI agent system for your business. What industry are you in?"
-    }
-  ]);
-  const [input, setInput] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-
-  const sendMessage = async () => {
-    if (!input.trim() || isLoading) return;
-
-    const userMessage = input.trim();
-    setInput('');
-    setMessages(prev => [...prev, { role: 'user', content: userMessage }]);
-    setIsLoading(true);
-
-    try {
-      const response = await fetch(`${AGENT_API_URL}/chat`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          message: userMessage,
-          thread_id: 'agents-made-easy-' + Date.now(),
-          context: {
-            mode: 'agents-made-easy',
-            conversation: messages,
-            businessInfo,
-            painPoints,
-            proposedSystem
-          }
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error(`Agent API responded with ${response.status}`);
-      }
-
-      const data = await response.json();
-      
-      // Process any actions from the response
-      if (data.actions) {
-        data.actions.forEach((action: any) => {
-          switch (action.type) {
-            case 'updateBusinessInfo':
-              setBusinessInfo(prev => ({ ...prev, ...action.data }));
-              break;
-            case 'addPainPoint':
-              setPainPoints(prev => [...prev, action.data]);
-              break;
-            case 'proposeAgentSystem':
-              setProposedSystem(action.data);
-              break;
-          }
-        });
-      }
-
-      setMessages(prev => [...prev, { role: 'assistant', content: data.response }]);
-    } catch (error) {
-      console.error('Error:', error);
-      setMessages(prev => [...prev, { 
-        role: 'assistant', 
-        content: "I'm having trouble connecting to the AI service. Please try again." 
-      }]);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
+// Booking Calendar Component
+function BookingCalendar({ slots }: { slots: any[] }) {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
-      {/* Hero Section */}
-      <div className="container mx-auto px-4 py-8">
-        <div className="text-center text-white mb-8">
-          <h1 className="text-5xl font-bold mb-4 bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-pink-400">
-            Instabids: Agents Made Easy
-          </h1>
-          <p className="text-xl text-purple-200 mb-8 max-w-3xl mx-auto">
-            Transform your business with custom AI agent systems. 
-            We'll discover your pain points and design the perfect AI automation strategy.
-          </p>
-          
-          {!showChat && (
-            <button 
-              className="bg-purple-600 hover:bg-purple-700 text-white px-8 py-4 text-lg rounded-lg transition-colors duration-200 flex items-center mx-auto"
-              onClick={() => setShowChat(true)}
-            >
-              <svg className="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
-              </svg>
-              Start Your AI Transformation Journey
-            </button>
-          )}
-        </div>
+    <motion.div 
+      initial={{ opacity: 0, scale: 0.9 }}
+      animate={{ opacity: 1, scale: 1 }}
+      className="bg-white rounded-xl p-6 shadow-lg"
+    >
+      <h3 className="text-2xl font-bold mb-4 flex items-center">
+        <Calendar className="mr-2" /> Book Your Demo
+      </h3>
+      <div className="grid grid-cols-3 gap-4">
+        {slots.map((slot, index) => (
+          <button
+            key={index}
+            className="p-3 border rounded-lg hover:bg-purple-100 transition-colors"
+          >
+            <p className="font-semibold">{slot.date}</p>
+            <p className="text-sm text-gray-600">{slot.time}</p>
+          </button>
+        ))}
+      </div>
+    </motion.div>
+  );
+}
 
-        {/* Main Content Area */}
-        {showChat && (
-          <div className="max-w-7xl mx-auto">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-              {/* Left Side - Dynamic Discovery Area */}
-              <div className="lg:col-span-2 space-y-6">
-                {/* Business Overview */}
-                {Object.keys(businessInfo).length > 0 && (
-                  <div className="p-6 bg-white/10 backdrop-blur-md border border-purple-500/20 rounded-xl">
-                    <h3 className="text-xl font-semibold text-white mb-4">Business Overview</h3>
-                    <div className="grid grid-cols-2 gap-4">
-                      {Object.entries(businessInfo).map(([key, value]) => (
-                        <div key={key}>
-                          <p className="text-purple-300 text-sm capitalize">{key.replace(/_/g, ' ')}</p>
-                          <p className="text-white font-medium">{value as string}</p>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Pain Points */}
-                {painPoints.length > 0 && (
-                  <div className="p-6 bg-white/10 backdrop-blur-md border border-purple-500/20 rounded-xl">
-                    <h3 className="text-xl font-semibold text-white mb-4 flex items-center">
-                      <svg className="w-6 h-6 mr-2 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-                      </svg>
-                      Discovered Opportunities
-                    </h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {painPoints.map((point, idx) => (
-                        <div 
-                          key={idx}
-                          className="p-4 bg-purple-500/20 rounded-lg transform transition-all duration-300 hover:scale-105"
-                        >
-                          <h4 className="font-semibold text-purple-200">{point.title}</h4>
-                          <p className="text-purple-100 text-sm mt-1">{point.description}</p>
-                          <div className="mt-2 flex items-center text-xs text-purple-300">
-                            <span className="px-2 py-1 bg-purple-600/30 rounded">
-                              Impact: {point.impact}
-                            </span>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Proposed System */}
-                {proposedSystem && (
-                  <div className="p-6 bg-gradient-to-br from-purple-600/20 to-blue-600/20 backdrop-blur-md border border-purple-500/30 rounded-xl">
-                    <h3 className="text-xl font-bold text-white mb-4">
-                      Your Custom AI Agent System
-                    </h3>
-                    <div className="space-y-4">
-                      {proposedSystem.agents?.map((agent: any, idx: number) => (
-                        <div key={idx} className="flex items-start space-x-3">
-                          <svg className="w-5 h-5 text-purple-400 mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                          </svg>
-                          <div>
-                            <h4 className="font-semibold text-purple-200">{agent.name}</h4>
-                            <p className="text-gray-300 text-sm">{agent.purpose}</p>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                    {proposedSystem.expectedImpact && (
-                      <div className="mt-6 p-4 bg-blue-500/20 rounded-lg">
-                        <p className="text-blue-200 font-semibold">Expected Impact:</p>
-                        <p className="text-white">{proposedSystem.expectedImpact}</p>
-                      </div>
-                    )}
-                    {proposedSystem.investment && (
-                      <div className="mt-4 grid grid-cols-2 gap-4">
-                        <div className="p-3 bg-green-500/20 rounded-lg">
-                          <p className="text-green-300 text-sm">Investment</p>
-                          <p className="text-white font-bold text-lg">{proposedSystem.investment}</p>
-                        </div>
-                        <div className="p-3 bg-green-500/20 rounded-lg">
-                          <p className="text-green-300 text-sm">ROI Timeline</p>
-                          <p className="text-white font-bold text-lg">{proposedSystem.roiTimeline || '3-6 months'}</p>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-
-              {/* Right Side - Chat Interface */}
-              <div className="lg:sticky lg:top-8">
-                <div className="bg-white/95 backdrop-blur-md overflow-hidden rounded-xl shadow-2xl">
-                  <div className="bg-gradient-to-r from-purple-600 to-pink-600 p-4">
-                    <h3 className="text-white font-semibold">AI Transformation Consultant</h3>
-                  </div>
-                  
-                  <div className="h-[500px] overflow-y-auto p-4 space-y-4">
-                    {messages.map((msg, idx) => (
-                      <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                        <div className={`max-w-[80%] p-3 rounded-lg ${
-                          msg.role === 'user' 
-                            ? 'bg-purple-600 text-white' 
-                            : 'bg-gray-100 text-gray-800'
-                        }`}>
-                          {msg.content}
-                        </div>
-                      </div>
-                    ))}
-                    {isLoading && (
-                      <div className="flex justify-start">
-                        <div className="bg-gray-100 text-gray-800 p-3 rounded-lg">
-                          <div className="flex space-x-2">
-                            <div className="w-2 h-2 bg-gray-400 rounded-full animate-pulse"></div>
-                            <div className="w-2 h-2 bg-gray-400 rounded-full animate-pulse delay-75"></div>
-                            <div className="w-2 h-2 bg-gray-400 rounded-full animate-pulse delay-150"></div>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                  
-                  <div className="p-4 border-t">
-                    <div className="flex space-x-2">
-                      <input
-                        type="text"
-                        value={input}
-                        onChange={(e) => setInput(e.target.value)}
-                        onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
-                        placeholder="Type your message..."
-                        className="flex-1 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-600"
-                        disabled={isLoading}
-                      />
-                      <button
-                        onClick={sendMessage}
-                        disabled={isLoading || !input.trim()}
-                        className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                      >
-                        Send
-                      </button>
-                    </div>
-                  </div>
-                </div>
-
-                {/* CTA Button */}
-                {proposedSystem && (
-                  <div className="mt-6">
-                    <button 
-                      className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white py-4 rounded-lg font-semibold transition-all duration-200"
-                      onClick={() => window.location.href = 'https://calendly.com/instabids/ai-transformation'}
-                    >
-                      Schedule Implementation Call
-                    </button>
-                  </div>
-                )}
-              </div>
+// Progress Indicator Component
+function ProgressIndicator({ steps }: { steps: any[] }) {
+  return (
+    <motion.div 
+      initial={{ opacity: 0, x: -20 }}
+      animate={{ opacity: 1, x: 0 }}
+      className="bg-white rounded-xl p-6 shadow-lg"
+    >
+      <h3 className="text-2xl font-bold mb-6">Implementation Progress</h3>
+      <div className="space-y-4">
+        {steps.map((step, index) => (
+          <div key={index} className="flex items-center">
+            <div className={`w-8 h-8 rounded-full flex items-center justify-center mr-4 ${
+              step.completed ? 'bg-green-500' : 'bg-gray-300'
+            }`}>
+              {step.completed && <Check className="w-5 h-5 text-white" />}
+            </div>
+            <div className="flex-1">
+              <p className="font-semibold">{step.name}</p>
+              <p className="text-sm text-gray-600">{step.description}</p>
             </div>
           </div>
-        )}
+        ))}
+      </div>
+    </motion.div>
+  );
+}
+
+// ROI Calculator Component
+function ROICalculator({ metrics }: { metrics: any }) {
+  const savings = metrics.hoursPerWeek * metrics.hourlyRate * 52;
+  const roi = ((savings - metrics.cost) / metrics.cost * 100).toFixed(0);
+  
+  return (
+    <motion.div 
+      initial={{ opacity: 0, rotate: -5 }}
+      animate={{ opacity: 1, rotate: 0 }}
+      className="bg-gradient-to-br from-purple-600 to-pink-600 text-white rounded-xl p-6 shadow-lg"
+    >
+      <h3 className="text-2xl font-bold mb-4 flex items-center">
+        <Calculator className="mr-2" /> ROI Calculator
+      </h3>
+      <div className="space-y-4">
+        <div>
+          <p className="text-sm opacity-90">Hours Saved Per Week</p>
+          <p className="text-3xl font-bold">{metrics.hoursPerWeek}</p>
+        </div>
+        <div>
+          <p className="text-sm opacity-90">Annual Savings</p>
+          <p className="text-3xl font-bold">${savings.toLocaleString()}</p>
+        </div>
+        <div>
+          <p className="text-sm opacity-90">ROI</p>
+          <p className="text-4xl font-bold flex items-center">
+            <TrendingUp className="mr-2" /> {roi}%
+          </p>
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
+// Main Component with Generative UI
+function AgentsMadeEasyContent() {
+  const [dynamicComponents, setDynamicComponents] = useState<any[]>([]);
+  
+  // Register action handlers for dynamic UI generation
+  useCopilotAction({
+    name: "showPricingTable",
+    description: "Display an interactive pricing table",
+    parameters: [
+      {
+        name: "plans",
+        type: "object[]",
+        description: "Array of pricing plans with name, price, and features"
+      }
+    ],
+    handler: async ({ plans }) => {
+      setDynamicComponents(prev => [...prev, { type: 'pricing', data: plans }]);
+      return "I've displayed our pricing plans for you. Each plan is designed for different business needs.";
+    }
+  });
+
+  useCopilotAction({
+    name: "showBookingCalendar",
+    description: "Show a calendar for booking demos",
+    parameters: [
+      {
+        name: "slots",
+        type: "object[]",
+        description: "Available time slots with date and time"
+      }
+    ],
+    handler: async ({ slots }) => {
+      setDynamicComponents(prev => [...prev, { type: 'calendar', data: slots }]);
+      return "I've shown available demo slots. Click any time that works for you!";
+    }
+  });
+
+  useCopilotAction({
+    name: "showProgressIndicator",
+    description: "Display implementation progress",
+    parameters: [
+      {
+        name: "steps",
+        type: "object[]",
+        description: "Implementation steps with name, description, and completed status"
+      }
+    ],
+    handler: async ({ steps }) => {
+      setDynamicComponents(prev => [...prev, { type: 'progress', data: steps }]);
+      return "Here's the typical implementation timeline. Most businesses complete setup within a week!";
+    }
+  });
+
+  useCopilotAction({
+    name: "showROICalculator",
+    description: "Display an ROI calculator",
+    parameters: [
+      {
+        name: "metrics",
+        type: "object",
+        description: "Business metrics including hoursPerWeek, hourlyRate, and cost"
+      }
+    ],
+    handler: async ({ metrics }) => {
+      setDynamicComponents(prev => [...prev, { type: 'roi', data: metrics }]);
+      return "Based on your inputs, here's your projected ROI. Most clients see positive returns within 30 days!";
+    }
+  });
+
+  return (
+    <div className="flex h-screen">
+      {/* Dynamic Components Panel */}
+      <div className="flex-1 bg-gray-100 overflow-y-auto p-6">
+        <h1 className="text-4xl font-bold text-gray-800 mb-8">
+          Instabids AI Agents - Live Demo
+        </h1>
+        
+        <AnimatePresence>
+          {dynamicComponents.length === 0 ? (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="text-center text-gray-600 mt-20"
+            >
+              <p className="text-xl mb-4">Ask me to show you:</p>
+              <ul className="space-y-2">
+                <li>• Pricing plans for your business size</li>
+                <li>• Available demo slots</li>
+                <li>• Implementation timeline</li>
+                <li>• ROI calculator for your use case</li>
+              </ul>
+            </motion.div>
+          ) : (
+            <div className="space-y-6">
+              {dynamicComponents.map((component, index) => (
+                <div key={index}>
+                  {component.type === 'pricing' && <PricingTable plans={component.data} />}
+                  {component.type === 'calendar' && <BookingCalendar slots={component.data} />}
+                  {component.type === 'progress' && <ProgressIndicator steps={component.data} />}
+                  {component.type === 'roi' && <ROICalculator metrics={component.data} />}
+                </div>
+              ))}
+            </div>
+          )}
+        </AnimatePresence>
+      </div>
+      
+      {/* Chat Panel */}
+      <div className="w-96 border-l">
+        <CopilotChat
+          instructions={`You are the Instabids AI Agent Assistant connected to our live sales system.
+          
+          IMPORTANT: Use the action functions to create dynamic UI components:
+          - When discussing pricing, use showPricingTable
+          - When scheduling demos, use showBookingCalendar  
+          - When explaining implementation, use showProgressIndicator
+          - When calculating ROI, use showROICalculator
+          
+          Example responses that trigger UI:
+          - "Let me show you our pricing plans" -> showPricingTable
+          - "I can help you book a demo" -> showBookingCalendar
+          - "Here's how implementation works" -> showProgressIndicator
+          - "Let's calculate your ROI" -> showROICalculator
+          
+          Always create visual components instead of just describing things in text.`}
+          labels={{
+            title: "AI Sales Assistant",
+            initial: "Hi! I'm your AI sales assistant. I can show you pricing, book demos, and calculate ROI. What would you like to see?"
+          }}
+          className="h-full"
+        />
       </div>
     </div>
   );
-};
+}
 
-export default AgentsMadeEasy;
+export default function AgentsMadeEasy() {
+  // Get the API URL from environment variable or use default
+  const apiUrl = import.meta.env.VITE_COPILOT_API_URL || '/api/copilot/agents-made-easy';
+  
+  return (
+    <CopilotKit runtimeUrl={apiUrl}>
+      <AgentsMadeEasyContent />
+    </CopilotKit>
+  );
+}
