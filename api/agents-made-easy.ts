@@ -1,121 +1,136 @@
+import { CopilotRuntime, OpenAIAdapter } from "@copilotkit/runtime";
+import OpenAI from "openai";
+
 export const config = {
   runtime: 'edge',
 };
 
+// System prompt that enhances the bot's responses to trigger UI actions
+const SYSTEM_PROMPT = `You are the Instabids AI Agent Assistant integrated with a dynamic UI system. 
+When users ask about:
+- Pricing: Say "Let me show you our pricing plans. We have three tiers designed to meet different business needs:"
+- Demo: Say "I can help you book a demo. Here are our available slots:"
+- Implementation: Say "Here's our typical implementation timeline:"
+- ROI: Say "Let's calculate your potential ROI:"
+
+These exact phrases will trigger beautiful UI components to appear.`;
+
 export default async function handler(req: Request) {
-  // Only handle POST requests
-  if (req.method !== 'POST') {
-    return new Response('Method not allowed', { status: 405 });
+  // Handle CORS preflight
+  if (req.method === 'OPTIONS') {
+    return new Response(null, {
+      status: 200,
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'POST, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+      },
+    });
   }
 
   try {
-    // Parse the incoming request
-    const body = await req.json();
-    
-    // Extract the last message from CopilotKit
-    const lastMessage = body.messages?.[body.messages.length - 1];
-    const userMessage = lastMessage?.content || '';
-    
-    console.log('Received message:', userMessage);
-    
-    // Forward to your sales bot API
-    const salesBotResponse = await fetch('https://instabids-sales-bot-api-67gkc.ondigitalocean.app/chat', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        message: userMessage,
-        thread_id: 'agents-made-easy-' + Date.now(),
-        context: {
-          mode: 'agents-made-easy',
-          full_conversation: body.messages
-        }
-      })
+    // Check for API key
+    if (!process.env.OPENAI_API_KEY) {
+      throw new Error('OPENAI_API_KEY is not configured');
+    }
+
+    // Create OpenAI client
+    const openai = new OpenAI({
+      apiKey: process.env.OPENAI_API_KEY,
     });
 
-    const data = await salesBotResponse.json();
-    let responseText = data.response || data.message || "I'm having trouble connecting to our sales system.";
-    
-    console.log('Sales bot response:', responseText);
-    
-    // Enhanced response text that will trigger UI generation
-    // CopilotKit will parse these patterns and trigger the corresponding actions
-    if (userMessage.toLowerCase().includes('pricing') || userMessage.toLowerCase().includes('plans') || userMessage.toLowerCase().includes('cost')) {
-      responseText = "Let me show you our pricing plans. We have three tiers designed to meet different business needs:\n\n" + responseText;
-    }
-    
-    if (userMessage.toLowerCase().includes('demo') || userMessage.toLowerCase().includes('book') || userMessage.toLowerCase().includes('meeting')) {
-      responseText = "I can help you book a demo. Here are our available slots:\n\n" + responseText;
-    }
-    
-    if (userMessage.toLowerCase().includes('implementation') || userMessage.toLowerCase().includes('timeline') || userMessage.toLowerCase().includes('process')) {
-      responseText = "Here's our typical implementation timeline:\n\n" + responseText;
-    }
-    
-    if (userMessage.toLowerCase().includes('roi') || userMessage.toLowerCase().includes('calculator') || userMessage.toLowerCase().includes('savings')) {
-      responseText = "Let's calculate your potential ROI:\n\n" + responseText;
-    }
-    
-    // Return OpenAI-compatible response that CopilotKit expects
-    const response = {
-      id: "chatcmpl-" + Date.now(),
-      object: "chat.completion",
-      created: Math.floor(Date.now() / 1000),
-      model: "gpt-3.5-turbo",
-      choices: [{
-        index: 0,
-        message: {
-          role: 'assistant',
-          content: responseText
-        },
-        finish_reason: 'stop'
-      }],
-      usage: {
-        prompt_tokens: 0,
-        completion_tokens: 0,
-        total_tokens: 0
-      }
-    };
-    
-    return new Response(JSON.stringify(response), {
+    // Create CopilotKit runtime with remote actions for your sales bot
+    const copilotKit = new CopilotRuntime({
+      actions: [
+        {
+          name: "chat_with_sales_bot",
+          description: "Chat with the InstaBids sales bot",
+          parameters: [
+            {
+              name: "message",
+              type: "string",
+              description: "The message to send to the sales bot",
+              required: true,
+            }
+          ],
+          handler: async ({ message }) => {
+            try {
+              // Forward to your sales bot API
+              const response = await fetch('https://instabids-sales-bot-api-67gkc.ondigitalocean.app/chat', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                  message: message,
+                  thread_id: 'agents-made-easy-' + Date.now(),
+                  context: {
+                    mode: 'agents-made-easy'
+                  }
+                })
+              });
+
+              if (!response.ok) {
+                throw new Error(`Sales bot API error: ${response.status}`);
+              }
+
+              const data = await response.json();
+              let responseText = data.response || data.message || "I'm having trouble connecting to our sales system.";
+              
+              // Enhance responses to trigger UI generation
+              const lowerMessage = message.toLowerCase();
+              if (lowerMessage.includes('pricing') || lowerMessage.includes('plans') || lowerMessage.includes('cost')) {
+                responseText = "Let me show you our pricing plans. We have three tiers designed to meet different business needs:\n\n" + responseText;
+              } else if (lowerMessage.includes('demo') || lowerMessage.includes('book') || lowerMessage.includes('meeting')) {
+                responseText = "I can help you book a demo. Here are our available slots:\n\n" + responseText;
+              } else if (lowerMessage.includes('implementation') || lowerMessage.includes('timeline') || lowerMessage.includes('process')) {
+                responseText = "Here's our typical implementation timeline:\n\n" + responseText;
+              } else if (lowerMessage.includes('roi') || lowerMessage.includes('calculator') || lowerMessage.includes('savings')) {
+                responseText = "Let's calculate your potential ROI:\n\n" + responseText;
+              }
+              
+              return responseText;
+            } catch (error) {
+              console.error('Error calling sales bot:', error);
+              return "I'm having trouble reaching our sales system. Please try again in a moment.";
+            }
+          }
+        }
+      ]
+    });
+
+    // Create service adapter
+    const serviceAdapter = new OpenAIAdapter({ 
+      openai,
+      systemPrompt: SYSTEM_PROMPT 
+    });
+
+    // Handle the request
+    const { handleRequest } = copilotKit.streamHttpServerResponse(req, serviceAdapter);
+
+    return handleRequest({
       headers: {
-        'Content-Type': 'application/json',
         'Access-Control-Allow-Origin': '*',
         'Access-Control-Allow-Methods': 'POST, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type',
+        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
       },
     });
   } catch (error) {
-    console.error('Error in agents-made-easy proxy:', error);
+    console.error('Error in CopilotKit runtime:', error);
     
-    // Return a properly formatted error response
-    return new Response(JSON.stringify({
-      id: "chatcmpl-error",
-      object: "chat.completion",
-      created: Math.floor(Date.now() / 1000),
-      model: "gpt-3.5-turbo",
-      choices: [{
-        index: 0,
-        message: {
-          role: 'assistant',
-          content: "I'm having trouble connecting to our sales system. Please try again in a moment."
+    return new Response(
+      JSON.stringify({ 
+        error: 'Internal server error',
+        details: error instanceof Error ? error.message : 'Unknown error',
+        message: error instanceof Error ? error.message : 'Unknown error'
+      }), 
+      {
+        status: 500,
+        headers: {
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*',
         },
-        finish_reason: 'stop'
-      }],
-      usage: {
-        prompt_tokens: 0,
-        completion_tokens: 0,
-        total_tokens: 0
       }
-    }), {
-      status: 200,
-      headers: {
-        'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'POST, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type',
-      },
-    });
+    );
   }
 }

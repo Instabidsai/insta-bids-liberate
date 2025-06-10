@@ -9,7 +9,7 @@
     }
   ],
   "functions": {
-    "api/copilot/agents-made-easy.ts": {
+    "api/agents-made-easy.ts": {
       "runtime": "edge"
     }
   }
