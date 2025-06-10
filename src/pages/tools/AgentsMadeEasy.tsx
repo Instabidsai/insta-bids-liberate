@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { CopilotKit, useCopilotAction, useCopilotReadable } from "@copilotkit/react-core";
 import { CopilotChat } from "@copilotkit/react-ui";
-import "@copilotkit/react-ui/styles.css";
+// Removed the CSS import as it's causing build errors
 
 // Use your existing agent backend
 const AGENT_API_URL = import.meta.env.VITE_SALES_BOT_API_URL || 'https://instabids-sales-bot-api-67gkc.ondigitalocean.app';
