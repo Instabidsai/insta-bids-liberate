@@ -262,8 +262,8 @@ function AgentsMadeEasyContent() {
 }
 
 export default function AgentsMadeEasy() {
-  // Connect directly to the sales bot API via proxy
-  const apiUrl = 'https://instabids-sales-bot-api-67gkc.ondigitalocean.app/chat';
+  // Use the proxy endpoint configured in vite.config.ts
+  const apiUrl = '/api/copilot/agents-made-easy';
   
   return (
     <CopilotKit runtimeUrl={apiUrl}>
