@@ -1,5 +1,3 @@
-'use client';
-
 import { CopilotKit } from "@copilotkit/react-core";
 import { CopilotChat, useCopilotAction } from "@copilotkit/react-ui";
 import "@copilotkit/react-ui/styles.css";
@@ -264,8 +262,8 @@ function AgentsMadeEasyContent() {
 }
 
 export default function AgentsMadeEasy() {
-  // Get the API URL from environment variable or use default
-  const apiUrl = import.meta.env.VITE_COPILOT_API_URL || '/api/copilot/agents-made-easy';
+  // Connect directly to the sales bot API via proxy
+  const apiUrl = 'https://instabids-sales-bot-api-67gkc.ondigitalocean.app/chat';
   
   return (
     <CopilotKit runtimeUrl={apiUrl}>
