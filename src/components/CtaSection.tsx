@@ -14,7 +14,6 @@ const CtaSection = () => {
     // In a real implementation, this would send data to a backend
     // For now, just simulate success
     setSubmitted(true);
-    console.log("User signup:", { email, userType });
   };
 
   return (

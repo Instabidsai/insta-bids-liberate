@@ -31,7 +31,10 @@ export default defineConfig(({ mode }) => ({
                 const response = data.response || data.message || "";
                 
                 // Pattern matching for UI generation
-                let actions = [];
+                const actions = [] as Array<{
+                  name: string;
+                  args: unknown;
+                }>;
                 
                 if (response.toLowerCase().includes('pricing') || response.toLowerCase().includes('plans')) {
                   actions.push({

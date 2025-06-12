@@ -19,12 +19,13 @@ const MissionSection = () => {
       { threshold: 0.1 }
     );
 
-    elementsRef.current.forEach((el) => {
+    const elements = elementsRef.current;
+    elements.forEach((el) => {
       if (el) observer.observe(el);
     });
 
     return () => {
-      elementsRef.current.forEach((el) => {
+      elements.forEach((el) => {
         if (el) observer.unobserve(el);
       });
     };

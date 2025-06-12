@@ -22,27 +22,28 @@ const SalesBot = () => {
   // Generate or retrieve thread ID
   useEffect(() => {
     const storedThreadId = localStorage.getItem("salesbot-thread-id");
+
+    const initialMessage: Message = {
+      role: "assistant",
+      content: "Hi! I'm here to help you get started with InstaBids. What kind of home improvement project are you planning?",
+    };
+
     if (storedThreadId) {
       setThreadId(storedThreadId);
-      // Load stored messages
       const storedMessages = localStorage.getItem(`salesbot-messages-${storedThreadId}`);
       if (storedMessages) {
         setMessages(JSON.parse(storedMessages));
+      } else {
+        setMessages([initialMessage]);
       }
     } else {
       const newThreadId = `thread-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
       localStorage.setItem("salesbot-thread-id", newThreadId);
       setThreadId(newThreadId);
-    }
-
-    // Add initial message
-    if (messages.length === 0) {
-      setMessages([{
-        role: "assistant",
-        content: "Hi! I'm here to help you get started with InstaBids. What kind of home improvement project are you planning?"
-      }]);
+      setMessages([initialMessage]);
     }
   }, []);
+
 
   // Save messages to localStorage whenever they change
   useEffect(() => {

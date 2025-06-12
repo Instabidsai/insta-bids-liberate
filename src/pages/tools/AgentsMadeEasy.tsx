@@ -5,8 +5,38 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Check, Calendar, Calculator, TrendingUp } from "lucide-react";
 
+interface PricingPlan {
+  name: string;
+  price: number;
+  featured: boolean;
+  features: string[];
+}
+
+interface Slot {
+  date: string;
+  time: string;
+}
+
+interface Step {
+  name: string;
+  description: string;
+  completed: boolean;
+}
+
+interface Metrics {
+  hoursPerWeek: number;
+  hourlyRate: number;
+  cost: number;
+}
+
+type DynamicComponent =
+  | { type: "pricing"; data: PricingPlan[] }
+  | { type: "calendar"; data: Slot[] }
+  | { type: "progress"; data: Step[] }
+  | { type: "roi"; data: Metrics };
+
 // Pricing Table Component
-function PricingTable({ plans }: { plans: any[] }) {
+function PricingTable({ plans }: { plans: PricingPlan[] }) {
   return (
     <motion.div 
       initial={{ opacity: 0, y: 20 }}
@@ -38,7 +68,7 @@ function PricingTable({ plans }: { plans: any[] }) {
 }
 
 // Booking Calendar Component
-function BookingCalendar({ slots }: { slots: any[] }) {
+function BookingCalendar({ slots }: { slots: Slot[] }) {
   return (
     <motion.div 
       initial={{ opacity: 0, scale: 0.9 }}
@@ -64,7 +94,7 @@ function BookingCalendar({ slots }: { slots: any[] }) {
 }
 
 // Progress Indicator Component
-function ProgressIndicator({ steps }: { steps: any[] }) {
+function ProgressIndicator({ steps }: { steps: Step[] }) {
   return (
     <motion.div 
       initial={{ opacity: 0, x: -20 }}
@@ -92,7 +122,7 @@ function ProgressIndicator({ steps }: { steps: any[] }) {
 }
 
 // ROI Calculator Component
-function ROICalculator({ metrics }: { metrics: any }) {
+function ROICalculator({ metrics }: { metrics: Metrics }) {
   const savings = metrics.hoursPerWeek * metrics.hourlyRate * 52;
   const roi = ((savings - metrics.cost) / metrics.cost * 100).toFixed(0);
   
@@ -127,7 +157,7 @@ function ROICalculator({ metrics }: { metrics: any }) {
 
 // Main Component with Generative UI
 function AgentsMadeEasyContent() {
-  const [dynamicComponents, setDynamicComponents] = useState<any[]>([]);
+  const [dynamicComponents, setDynamicComponents] = useState<DynamicComponent[]>([]);
   
   // Get the chat messages to analyze for UI triggers
   const { messages } = useCopilotChat();
@@ -268,7 +298,13 @@ function AgentsMadeEasyContent() {
         }
       }
     }
-  }, [messages]);
+  }, [
+    messages,
+    showPricingTable,
+    showBookingCalendar,
+    showProgressIndicator,
+    showROICalculator,
+  ]);
 
   return (
     <div className="flex h-screen">

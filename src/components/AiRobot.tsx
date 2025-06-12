@@ -13,7 +13,7 @@ const AiRobot: React.FC<AiRobotProps> = ({ className = "" }) => {
     if (!robot) return;
     
     // Simple animation effect
-    let bounceInterval = setInterval(() => {
+    const bounceInterval = setInterval(() => {
       robot.style.transform = "translateY(-3px)";
       setTimeout(() => {
         if (robot) robot.style.transform = "translateY(0)";
